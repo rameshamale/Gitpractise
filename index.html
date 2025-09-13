@@ -2,11 +2,167 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Home</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>User Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    input, button { margin: 5px; padding: 8px; }
+    .actions { margin-top: 15px; }
+  </style>
 </head>
 <body>
-  <h1>Welcome to My Website</h1>
-  <a href="login.html">Login</a>
+  <h1>User Management</h1>
+
+  <!-- Search by Name -->
+  <div>
+    <input type="text" id="searchInput" placeholder="Search by name...">
+    <button onclick="searchUsers()">Search</button>
+    <button onclick="loadUsers()">Reset</button>
+  </div>
+
+  <!-- Get Single User -->
+  <div class="actions">
+    <input type="number" id="userIdInput" placeholder="Enter User ID">
+    <button onclick="getUserById()">Get User</button>
+  </div>
+
+  <!-- Add User -->
+  <div class="actions">
+    <h3>Add User</h3>
+    <input type="text" id="newName" placeholder="Name">
+    <input type="email" id="newEmail" placeholder="Email">
+    <button onclick="addUser()">Add</button>
+  </div>
+
+  <!-- Delete User -->
+  <div class="actions">
+    <h3>Delete User</h3>
+    <input type="text" id="deleteId" placeholder="User ID">
+    <button onclick="deleteUser()">Delete</button>
+  </div>
+
+  <!-- Table for Users -->
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Email</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // Replace this with your Render JSON server API
+    const API_URL = "https://my-json-api-wbf0.onrender.com/users";
+    
+    // Load all users
+    async function loadUsers() {
+      const res = await fetch(API_URL);
+      const users = await res.json();
+      displayUsers(users);
+    }
+
+async function getUserById() {
+  const id = document.getElementById("userIdInput").value.trim();
+  if (!id) return alert("Please enter a user ID");
+
+  // Query by id field (exact match)
+  const res = await fetch(`${API_URL}?id=${id}`);
+  const users = await res.json();
+
+  if (users.length === 0) {
+    alert("User not found");
+    return;
+  }
+  displayUsers(users); // shows the exact match
+}
+
+
+    // Search users by name
+    async function searchUsers() {
+      const name = document.getElementById("searchInput").value;
+      if (!name) {
+        loadUsers();
+        return;
+      }
+      const res = await fetch(`${API_URL}?name_like=${name}`);
+      const users = await res.json();
+      displayUsers(users);
+    }
+
+    // Add user
+    async function addUser() {
+      const name = document.getElementById("newName").value;
+      const email = document.getElementById("newEmail").value;
+      if (!name || !email) return alert("Enter both name and email");
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email })
+      });
+
+      if (res.ok) {
+        alert("User added!");
+        document.getElementById("newName").value = "";
+        document.getElementById("newEmail").value = "";
+        loadUsers();
+      }
+    }
+
+// Delete user by alphanumeric ID
+async function deleteUser() {
+  const id = document.getElementById("deleteId").value.trim();
+  if (!id) return alert("Enter a user ID");
+
+  // 1. Search for user with that ID
+  const res = await fetch(`${API_URL}?id=${id}`);
+  const users = await res.json();
+
+  if (users.length === 0) {
+    alert("User not found");
+    return;
+  }
+
+  // 2. JSON Server will give us the record with its internal numeric ID
+  const user = users[0];
+
+  // 3. Delete using the internal id (auto id JSON server uses in the URL)
+  const delRes = await fetch(`${API_URL}/${user.id}`, { method: "DELETE" });
+
+  if (delRes.ok) {
+    alert(`User with ID ${id} deleted!`);
+    document.getElementById("deleteId").value = "";
+    loadUsers();
+  } else {
+    alert("Error deleting user");
+  }
+}
+
+    // Render users in table
+    function displayUsers(users) {
+      const tbody = document.querySelector("#userTable tbody");
+      tbody.innerHTML = "";
+
+      if (users.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='3'>No users found</td></tr>";
+        return;
+      }
+
+      users.forEach(u => {
+        const row = `<tr>
+          <td>${u.id}</td>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    // Initial load
+    loadUsers();
+  </script>
 </body>
 </html>
