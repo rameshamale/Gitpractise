@@ -5,7 +5,7 @@ document.getElementById("loginForm").addEventListener("submit", function(e){
     const password = document.getElementById("password").value;
     
     // Demo credentials
-    if(email === "rameshamale26@gmail.com" && password === "Test@123"){
+    if(email === "rameshamale26@gmail.com" && password === "Amale@123""){
         alert("Login successful!");
         window.location.href = "dashboard.html";
     } else {
